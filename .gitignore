@@ -1,8 +1,11 @@
 venv/
 .env
+.yml
 sessions/
 waha_data/
+~/.cache/huggingface/
 __pycache__/
 *.pyc
 *.pyo
 *.pdf
+docker-compose.yml
