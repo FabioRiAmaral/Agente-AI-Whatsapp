@@ -1,0 +1,8 @@
+venv/
+.env
+sessions/
+waha_data/
+__pycache__/
+*.pyc
+*.pyo
+*.pdf
