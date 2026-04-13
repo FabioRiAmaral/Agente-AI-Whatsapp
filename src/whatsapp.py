@@ -14,7 +14,7 @@ class WhatsappClient:
       "X-Api-Key": api_key,
     }
     
-  def sendMessage(self, phoneNumber, text):
+  def sendMessage(self, phoneNumber, text): #Já pre definido para usar depois para enviar as respostas
     requests.post(
       f"{base_url}/api/sendText",
       headers=self.headers,
@@ -25,7 +25,7 @@ class WhatsappClient:
       }
     )
   
-  def downloadMedia(self, mediaUrl: str) -> bytes:
-    response = requests.get(mediaUrl, headers=self.headers)
+  def downloadMedia(self, mediaUrl: str) -> bytes: 
+    response = requests.get(mediaUrl, headers=self.headers) #Recebe os arquivos do Waha, que armazena eles em URL local
     response.raise_for_status()
     return response.content
