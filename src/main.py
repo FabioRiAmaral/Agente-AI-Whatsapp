@@ -1,7 +1,13 @@
-import logging, os, sys
-import requests
 from flask import Flask, request
+from bot import Bot
 
 app = Flask(__name__)
+bot = Bot()
 
-waha_url = "http://localhost:3000"
+@app.route("/webhook", methods=["POST"])
+def webhook():
+  bot.handleEvent(request.json)
+  return "Tudo certo"
+
+if __name__ == "__main__":
+  app.run(host="0.0.0.0", port=5000, debug=False)
