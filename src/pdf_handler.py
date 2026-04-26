@@ -19,7 +19,7 @@ class PdfHandler:
     try:
       doc = fitz.open(tmp_path)
       pages = [doc[i].get_text() for i in range(doc.page_count)]
-      doc.close
       return "\n\n".join(pages) # Retorna cada texto de cada pagina em str
     finally:
+      doc.close()
       os.unlink(tmp_path) # Descobri que em python o mesmo vindo aparentemente depois do return, o finally ativa antes

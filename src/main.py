@@ -1,14 +1,5 @@
 from flask import Flask, request
 from bot import Bot
-import logging, sys
-
-logging.basicConfig(
-  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-  level=logging.INFO,
-  handlers=[
-    logging.StreamHandler(sys.stdout)
-  ]
-)
 
 app = Flask(__name__)
 bot = Bot()

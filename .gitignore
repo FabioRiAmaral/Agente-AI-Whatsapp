@@ -9,3 +9,5 @@ __pycache__/
 *.pyo
 *.pdf
 docker-compose.yml
+teste.py
+logs/

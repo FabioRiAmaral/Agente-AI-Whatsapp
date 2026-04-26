@@ -3,6 +3,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from session_manager import Session
 
 model_id = "google/gemma-4-E2B-it"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class AiHandler:
   def __init__(self):
@@ -10,8 +11,7 @@ class AiHandler:
     self.model = AutoModelForCausalLM.from_pretrained(
       model_id,
       dtype=torch.bfloat16,
-      device_map="auto",
-    )
+    ).to(device)
   
   def getAnswer(self, session: Session, question):
     messages = self.buildMessages(session, question)
@@ -49,7 +49,7 @@ class AiHandler:
   
   def generate(self, prompt):
     inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-    with torch.inferenceMode():
+    with torch.inference_mode():
       outputs = self.model.generate(
         **inputs,
         max_new_tokens=512,
