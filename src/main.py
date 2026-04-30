@@ -8,6 +8,7 @@ bot = Bot()
 def webhook():
   bot.handleEvent(request.json)
   return "Tudo certo"
+#teste
 
 if __name__ == "__main__":
   app.run(host="0.0.0.0", port=5000, debug=False) # http://host.docker.internal:5000/webhook

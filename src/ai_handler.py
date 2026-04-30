@@ -8,6 +8,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 class AiHandler:
   def __init__(self):
     self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+    self.tokenizer.pad_token = self.tokenizer.eos_token
     self.model = AutoModelForCausalLM.from_pretrained(
       model_id,
       dtype=torch.bfloat16,
@@ -48,7 +49,11 @@ class AiHandler:
     )
   
   def generate(self, prompt):
-    inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+    inputs = self.tokenizer(
+      prompt, 
+      return_tensors="pt",
+      truncation=True,
+      max_length=4096,).to(device)
     with torch.inference_mode():
       outputs = self.model.generate(
         **inputs,
@@ -57,6 +62,8 @@ class AiHandler:
         do_sample=True,
         top_p=0.8,
         repetition_penalty=1.1,
+        eos_token_id=self.tokenizer.eos_token_id,
+        pad_token_id=self.tokenizer.eos_token_id,
       )
     answerIds = outputs[0][inputs["input_ids"].shape[-1]:]#Esses dois é um tratamento necessario para os resultados que o Gemma entrega
     return self.tokenizer.decode(answerIds, skip_special_tokens=True)
