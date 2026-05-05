@@ -3,7 +3,6 @@ from pdf_handler import PdfHandler
 from ai_handler import AiHandler
 from session_manager import SessionManager
 from logger import logger
-import json
 
 bot_number = "5562996223115@c.us"
 

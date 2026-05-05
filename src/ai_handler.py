@@ -1,33 +1,41 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+import os, requests
+from dotenv import load_dotenv
 from session_manager import Session
 
-model_id = "google/gemma-4-E2B-it"
-device = "cuda" if torch.cuda.is_available() else "cpu"
+load_dotenv()
+
+api_key = os.getenv("HF_API_KEY", "")
+url = "https://api-inference.huggingface.co/models/google/gemma-3-4b-it"
 
 class AiHandler:
   def __init__(self):
-    self.tokenizer = AutoTokenizer.from_pretrained(model_id)
-    self.tokenizer.pad_token = self.tokenizer.eos_token
-    self.model = AutoModelForCausalLM.from_pretrained(
-      model_id,
-      dtype=torch.bfloat16,
-    ).to(device)
+    self.headers = { 
+      "Authorization": f"Beared {api_key}", # Requisição padrao do hugging face para ver se tem permição
+      "Content-Type": "application/json",
+    }
   
   def getAnswer(self, session: Session, question):
-    messages = self.buildMessages(session, question)
-    prompt = self.apllyTemplate(messages)
-    answer = self.generate(prompt)
+    prompt = self.buildPrompt(session, question)
+    answer = self.callApi(prompt)
+    
     session.add_to_history("user", question) #Guarda pro modelo ter contexto das mensagens
     session.add_to_history("assistant", answer)
     return answer
   
-  def buildMessages(self, session: Session, question):
-    return [
+  def buildPrompt(self, session: Session, question):
+    messages = [
       {"role": "system", "content": self.systemPrompt(session.pdf_text)},
       *session.history,
       {"role": "user", "content": question}
     ]
+    
+    prompt = ""
+    for msg in messages:
+      role = msg["role"]
+      content = msg["content"]
+      prompt = f"<|im_start|>{role}\n{content}<|im_end|>\n"
+    prompt += "<|im_start|>assistant\n"
+    return prompt
   
   def systemPrompt(self, pdfText):
     return (
@@ -41,29 +49,23 @@ class AiHandler:
       f"{pdfText}"
     )
     
-  def apllyTemplate(self, messages: list[dict]):
-    return self.tokenizer.apply_chat_template(
-      messages,
-      tokenize=False,
-      add_generation_prompt=True,
+  def callApi(self, prompt):
+    response = requests.post(
+      url,
+      headers=self.headers,
+      json={"input": prompt, "parameters": {
+        "max_new_tokens": 512,
+        "temperature": 0.2, 
+        "top_p": 0.8, 
+        "repetition_penalty": 1.1, 
+        "return_full_text": False,
+        } # type: ignore
+      }
     )
-  
-  def generate(self, prompt):
-    inputs = self.tokenizer(
-      prompt, 
-      return_tensors="pt",
-      truncation=True,
-      max_length=4096,).to(device)
-    with torch.inference_mode():
-      outputs = self.model.generate(
-        **inputs,
-        max_new_tokens=512,
-        temperature=0.2, #O tanto que a AI foge do pdf, quando mais proximo de zero mais duro no pdf ele responde, trocar se necessario
-        do_sample=True,
-        top_p=0.8,
-        repetition_penalty=1.1,
-        eos_token_id=self.tokenizer.eos_token_id,
-        pad_token_id=self.tokenizer.eos_token_id,
-      )
-    answerIds = outputs[0][inputs["input_ids"].shape[-1]:]#Esses dois é um tratamento necessario para os resultados que o Gemma entrega
-    return self.tokenizer.decode(answerIds, skip_special_tokens=True)
+    
+    response.raise_for_status()
+    data = response.json()
+    
+    if isinstance(data, list) and data:
+      return data[0].get("generated_text", "Erro ao gerar resposta.")
+    return "Erro ao gerar resposta."
